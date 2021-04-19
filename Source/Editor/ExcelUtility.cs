@@ -6,6 +6,7 @@ using System.Data;
 using System.IO;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 
 public class ExcelUtility
 {
@@ -15,11 +16,13 @@ public class ExcelUtility
         /// </summary>
         private DataSet mResultSet;
 
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="excelFile">Excel file.</param>
-        public ExcelUtility(string excelFile)
+    private static readonly Regex NameRegex = new Regex(@"^[A-Z][A-Za-z0-9_]*$");
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="excelFile">Excel file.</param>
+    public ExcelUtility(string excelFile)
         {
             FileStream mStream = File.Open(excelFile, FileMode.Open, FileAccess.Read);
             IExcelDataReader mExcelReader = ExcelReaderFactory.CreateOpenXmlReader(mStream);
@@ -108,6 +111,15 @@ public class ExcelUtility
             {
                 for (int j = 0; j < colCount; j++)
                 {
+                if (i == 1)
+                {
+                    string localstring = mSheet.Rows[i][j].ToString();
+                    if (!NameRegex.IsMatch(localstring) && localstring != "" && localstring != "#")
+                    {
+                        Debug.LogError(string.Format("表中字段名字不符合正则表达式. 表名='{0}' 字段名='{1}'", mSheet.TableName, localstring));
+                        continue;
+                    }
+                }
                 //使用","分割每一个数值
                 if (j == colCount - 1)
                 {
@@ -161,30 +173,34 @@ public class ExcelUtility
             //创建一个StringBuilder存储数据
             StringBuilder stringBuilder = new StringBuilder();
             //创建Xml文件头
-            stringBuilder.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            stringBuilder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
             stringBuilder.Append("\r\n");
             //创建根节点
-            stringBuilder.Append("<Table>");
+            stringBuilder.Append("<Dictionaries>");
             stringBuilder.Append("\r\n");
-            //读取数据
-            for (int i = 1; i < rowCount; i++)
+            stringBuilder.Append("<Dictionary Language="+ mSheet.Rows[1][0] + " >");
+            stringBuilder.Append("\r\n");
+        //读取数据
+        for (int i = 1; i < rowCount; i++)
             {
-                //创建子节点
+               /* //创建子节点
                 stringBuilder.Append("  <Row>");
-                stringBuilder.Append("\r\n");
-                for (int j = 0; j < colCount; j++)
-                {
-                    stringBuilder.Append("   <"+ mSheet.Rows[0][j].ToString() +">");
-                    stringBuilder.Append(mSheet.Rows[i][j].ToString());
-                    stringBuilder.Append("</" + mSheet.Rows[0][j].ToString() + ">");
+                stringBuilder.Append("\r\n");*/
+               /* for (int j = 1; j < colCount; j++)
+                {*/
+                    stringBuilder.Append("   <" + mSheet.Rows[0][1].ToString() + "=" + "\"" + mSheet.Rows[i][1] + "\"" + " " + mSheet.Rows[0][2].ToString() + "="+ "\"" +mSheet.Rows[i][2] + "\"" + "/>");
+
+              
                     stringBuilder.Append("\r\n");
-                }
-                //使用换行符分割每一行
+               /* }*/
+              /*  //使用换行符分割每一行
                 stringBuilder.Append("  </Row>");
-                stringBuilder.Append("\r\n");
+                stringBuilder.Append("\r\n");*/
             }
-            //闭合标签
-            stringBuilder.Append("</Table>");
+        //闭合标签
+        stringBuilder.Append("</Dictionary>");
+        stringBuilder.Append("\r\n");
+        stringBuilder.Append("</Dictionaries>");
             //写入文件
             using (FileStream fileStream = new FileStream(XmlFile, FileMode.Create, FileAccess.Write))
             {

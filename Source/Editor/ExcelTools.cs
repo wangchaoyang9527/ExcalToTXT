@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 public class ExcelTools : EditorWindow
 {
@@ -34,7 +35,7 @@ public class ExcelTools : EditorWindow
 	/// <summary>
 	/// 输出格式
 	/// </summary>
-	private static string[] formatOption=new string[]{"JSON","TXT","XML"};
+	private static string[] formatOption=new string[]{ "TXT", "JSON", "XML"};
 
 	/// <summary>
 	/// 编码索引
@@ -51,12 +52,18 @@ public class ExcelTools : EditorWindow
 	/// </summary>
 	private static bool keepSource=true;
 
+	private static string sourcePath = "";
+	private static string targetPath = "";
+
+
 	/// <summary>
 	/// 显示当前窗口	
 	/// </summary>
 	[MenuItem("Plugins/ExcelTools")]
 	static void ShowExcelTools()
 	{
+		sourcePath = PlayerPrefs.GetString("sourcePath");
+		sourcePath = PlayerPrefs.GetString("targetPath");
 		Init();
 		//加载Excel文件
 		LoadExcel();
@@ -83,8 +90,30 @@ public class ExcelTools : EditorWindow
 		EditorGUILayout.LabelField("请选择编码类型:",GUILayout.Width(85));
 		indexOfEncoding=EditorGUILayout.Popup(indexOfEncoding,encodingOption,GUILayout.Width(125));
 		GUILayout.EndHorizontal();
+		EditorGUILayout.BeginHorizontal();
+		{
+			EditorGUILayout.LabelField("EXCAL文件路径", GUILayout.Width(160f));
+			sourcePath = EditorGUILayout.TextField(sourcePath);
+			if (GUILayout.Button("Browse...", GUILayout.Width(80f)))
+			{
+				 sourcePath = EditorUtility.OpenFolderPanel("Select Excal Directory", sourcePath, string.Empty);
+			}
+		}
+		EditorGUILayout.EndHorizontal();
+		EditorGUILayout.BeginHorizontal();
+		{
+			EditorGUILayout.LabelField("要导出的文件路径", GUILayout.Width(160f));
+			targetPath = EditorGUILayout.TextField(targetPath);
+			if (GUILayout.Button("Browse...", GUILayout.Width(80f)))
+			{
+				targetPath = EditorUtility.OpenFolderPanel("Select TXT Directory", targetPath, string.Empty);
+			}
+		}
+		EditorGUILayout.EndHorizontal();
+		/*sourcePath = EditorGUILayout.TextField("EXCAL文件路径：", sourcePath, GUILayout.Width(500), GUILayout.Height(20));
+		TargetPath = EditorGUILayout.TextField("要导出的文件路径：", TargetPath, GUILayout.Width(500), GUILayout.Height(20));*/
 
-		keepSource=GUILayout.Toggle(keepSource,"保留Excel源文件");
+		keepSource = GUILayout.Toggle(keepSource,"保留Excel源文件");
 	}
 
 	/// <summary>
@@ -92,15 +121,15 @@ public class ExcelTools : EditorWindow
 	/// </summary>
 	private void DrawExport()
 	{
-		if(excelList==null) return;
-		if(excelList.Count<1)
+		//if(excelList==null) return;
+		if(sourcePath == "")
 		{
 			EditorGUILayout.LabelField("目前没有Excel文件被选中哦!");
 		}
 		else
 		{
 			EditorGUILayout.LabelField("下列项目将被转换为" + formatOption[indexOfFormat] + ":");
-			GUILayout.BeginVertical();
+			/*GUILayout.BeginVertical();
 			scrollPos=GUILayout.BeginScrollView(scrollPos,false,true,GUILayout.Height(150));
 			foreach(string s in excelList)
 			{
@@ -109,7 +138,7 @@ public class ExcelTools : EditorWindow
 				GUILayout.EndHorizontal();
 			}
 			GUILayout.EndScrollView();
-			GUILayout.EndVertical();
+			GUILayout.EndVertical();*/
 
 			//输出
 			if(GUILayout.Button("转换"))
@@ -124,50 +153,115 @@ public class ExcelTools : EditorWindow
 	/// </summary>
 	private static void Convert()
 	{
-		foreach(string assetsPath in excelList)
-		{
-			//获取Excel文件的绝对路径
-			string excelPath=pathRoot + "/" + assetsPath;
-			//构造Excel工具类
-			ExcelUtility excel=new ExcelUtility(excelPath);
+		PlayerPrefs.SetString("sourcePath", sourcePath);
+		PlayerPrefs.SetString("targetPath", targetPath);
+		//D:/ExcalToTxt/Assets/sourcefile/Pass.xlsx
+		//"D:/ExcalToTxt/Assets/sourcefilePass.xlsx"
+		DirectoryInfo direction = new DirectoryInfo(sourcePath);
+        FileInfo[] alldatatabletext = direction.GetFiles();
+        for (int i = 0; i < alldatatabletext.Length; i++)
+        {
+            if (alldatatabletext[i].Name.EndsWith(".xlsx"))
+            {
+                //获取Excel文件的绝对路径
+                string excelPath = sourcePath +"/"+ alldatatabletext[i].Name;
 
-			//判断编码类型
-			Encoding encoding=null;
-			if(indexOfEncoding==0){
-				encoding=Encoding.GetEncoding("utf-8");
-			}else if(indexOfEncoding==1){
-				encoding=Encoding.GetEncoding("gb2312");
-			}
+				string txtPath = targetPath + "/" + alldatatabletext[i].Name;
+				//构造Excel工具类
+				ExcelUtility excel = new ExcelUtility(excelPath);
 
-			//判断输出类型
-			string output="";
-			if(indexOfFormat==0){
-				output=excelPath.Replace(".xlsx",".json");
-				excel.ConvertToJson(output,encoding);
-			}else if(indexOfFormat==1){
-				output=excelPath.Replace(".xlsx",".txt");
-				excel.ConvertToCSV(output,encoding);
-			}else if(indexOfFormat==2){
-				output=excelPath.Replace(".xlsx",".xml");
-				excel.ConvertToXml(output);
-			}
+                //判断编码类型
+                Encoding encoding = null;
+                if (indexOfEncoding == 0)
+                {
+                    encoding = Encoding.GetEncoding("utf-8");
+                }
+                else if (indexOfEncoding == 1)
+                {
+                    encoding = Encoding.GetEncoding("gb2312");
+                }
 
-			//判断是否保留源文件
-			if(!keepSource)
-			{
-				FileUtil.DeleteFileOrDirectory(excelPath);
-			}
+                //判断输出类型
+                string output = "";
+                if (indexOfFormat == 0)
+                {
+					output = txtPath.Replace(".xlsx", ".txt");
+					excel.ConvertToCSV(output, encoding);
+					
+                }
+                else if (indexOfFormat == 1)
+                {
+					output = txtPath.Replace(".xlsx", ".json");
+					excel.ConvertToJson(output, encoding);
+				}
+                else if (indexOfFormat == 2)
+                {
+                    output = txtPath.Replace(".xlsx", ".xml");
+                    excel.ConvertToXml(output);
+                }
 
-			//刷新本地资源
-			AssetDatabase.Refresh();
-		}
+                //判断是否保留源文件
+                if (!keepSource)
+                {
+                    FileUtil.DeleteFileOrDirectory(excelPath);
+                }
 
-		//转换完后关闭插件
-		//这样做是为了解决窗口
-		//再次点击时路径错误的Bug
-		instance.Close();
+                //刷新本地资源
+                AssetDatabase.Refresh();
+            }
+        }
+        /*foreach (string assetsPath in excelList)
+        {
+            //获取Excel文件的绝对路径
+            string excelPath = pathRoot + "/" + assetsPath;
+            //构造Excel工具类
+            ExcelUtility excel = new ExcelUtility(excelPath);
 
-	}
+            //判断编码类型
+            Encoding encoding = null;
+            if (indexOfEncoding == 0)
+            {
+                encoding = Encoding.GetEncoding("utf-8");
+            }
+            else if (indexOfEncoding == 1)
+            {
+                encoding = Encoding.GetEncoding("gb2312");
+            }
+
+            //判断输出类型
+            string output = "";
+            if (indexOfFormat == 0)
+            {
+                output = excelPath.Replace(".xlsx", ".json");
+                excel.ConvertToJson(output, encoding);
+            }
+            else if (indexOfFormat == 1)
+            {
+                output = excelPath.Replace(".xlsx", ".txt");
+                excel.ConvertToCSV(output, encoding);
+            }
+            else if (indexOfFormat == 2)
+            {
+                output = excelPath.Replace(".xlsx", ".xml");
+                excel.ConvertToXml(output);
+            }
+
+            //判断是否保留源文件
+            if (!keepSource)
+            {
+                FileUtil.DeleteFileOrDirectory(excelPath);
+            }
+
+            //刷新本地资源
+            AssetDatabase.Refresh();
+        }*/
+
+        //转换完后关闭插件
+        //这样做是为了解决窗口
+        //再次点击时路径错误的Bug
+        //instance.Close();
+
+    }
 
 	/// <summary>
 	/// 加载Excel
