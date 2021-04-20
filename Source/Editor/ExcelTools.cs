@@ -63,7 +63,7 @@ public class ExcelTools : EditorWindow
 	static void ShowExcelTools()
 	{
 		sourcePath = PlayerPrefs.GetString("sourcePath");
-		sourcePath = PlayerPrefs.GetString("targetPath");
+		targetPath = PlayerPrefs.GetString("targetPath");
 		Init();
 		//加载Excel文件
 		LoadExcel();
