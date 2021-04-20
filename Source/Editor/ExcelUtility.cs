@@ -178,8 +178,8 @@ public class ExcelUtility
             //创建根节点
             stringBuilder.Append("<Dictionaries>");
             stringBuilder.Append("\r\n");
-            stringBuilder.Append("<Dictionary Language="+ mSheet.Rows[1][0] + " >");
-            stringBuilder.Append("\r\n");
+        stringBuilder.Append("<Dictionary Language=" + "\"" + mSheet.Rows[1][0] + "\"" + " >");
+        stringBuilder.Append("\r\n");
         //读取数据
         for (int i = 1; i < rowCount; i++)
             {
@@ -188,7 +188,7 @@ public class ExcelUtility
                 stringBuilder.Append("\r\n");*/
                /* for (int j = 1; j < colCount; j++)
                 {*/
-                    stringBuilder.Append("   <" + mSheet.Rows[0][1].ToString() + "=" + "\"" + mSheet.Rows[i][1] + "\"" + " " + mSheet.Rows[0][2].ToString() + "="+ "\"" +mSheet.Rows[i][2] + "\"" + "/>");
+                    stringBuilder.Append("   <" + mSheet.Rows[0][1].ToString() + "=" + "\"" + mSheet.Rows[i][1] + "\"" + " " + mSheet.Rows[0][2].ToString() + "="+ "\"" +mSheet.Rows[i][2] + "\"" + " />");
 
               
                     stringBuilder.Append("\r\n");
